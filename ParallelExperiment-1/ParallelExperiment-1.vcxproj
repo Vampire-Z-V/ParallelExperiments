@@ -82,8 +82,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -115,6 +116,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="mat_vect_mult.c" />
+    <ClCompile Include="psrs.cpp" />
+    <ClCompile Include="PSRS_OpenMP.cpp" />
+    <ClCompile Include="Source.cpp" />
+    <ClCompile Include="trap.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PSRS_OpenMP.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
