@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <omp.h>
 #include <algorithm>
 #include "PSRS_OpenMP.h"
@@ -10,38 +10,41 @@ using namespace std;
 #define TIME_STOP_RECORD \
 	double EndTime = omp_get_wtime(); \
 	printf("RunTime: %.10fs\n", EndTime - StartTime);
+#define BLOCK 200
 
 int main()
 {
 	/*int test[] = {
 		33,78,92,1,39,19,71,39,90,3,21,4,82,87,89,76,31,10,24,53,50,76,33,78,56,13,15,68,94,93,8,36,63,82,40,56,81,25,29,77,65,54,27,82,24,99,41,5,92,43
 	};*/
-	int test[] = {
-		15,46,48,93,39,6,72,91,14,36,69,40,89,61,97,12,21,54,53,97,84,58,32,27,33,72,20
-	};
-	int length = sizeof(test) / sizeof(int);
-
-	TIME_START_RECORD
-	int * result = PSRS(test, length, 4);
-	TIME_STOP_RECORD
-
-#ifdef _DEBUG
-	/*for (auto t : test)
+	int *test = new int[BLOCK]();
+	for (int i = 1; i < BLOCK; i++)
 	{
-		printf("%d ", t);
+		test[i] = test[i - 1] - 1;
 	}
-	printf("\n");*/
-
-	for (int i = 0; i < length; i++)
+	/*for (int i = 0; i < BLOCK; i++)
 	{
-		printf("%d ", result[i]);
+		printf("%d ", test[i]);
 	}
 	printf("\n");
-	system("pause");
-#endif 
+	printf("\n");*/
 
-	if(result != test)
-		delete[] result;
+	TIME_START_RECORD
+	int * result = PSRS(test, BLOCK, 10);
+	TIME_STOP_RECORD
+
+//#ifdef _DEBUG
+	/*for (int i = 0; i < BLOCK; i++)
+	{
+		printf("%d ", test[i]);
+	}
+	printf("\n");*/
+	system("pause");
+//#endif 
+
+	delete[] test;
+	test = nullptr;
+	//delete[] result;
 
 	return 0;
 }

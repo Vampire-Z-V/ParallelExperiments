@@ -1,10 +1,10 @@
-#include "PSRS_OpenMP.h"
+ï»¿#include "PSRS_OpenMP.h"
 #include <omp.h>
 #include <algorithm>
+using namespace std;
 
 #ifdef _DEBUG
 #include <iostream>
-using namespace std;
 #endif
 
 int * PSRS(int *numbers, int n, int p)
@@ -18,59 +18,65 @@ int * PSRS(int *numbers, int n, int p)
 		sort(numbers, numbers + n);
 		return numbers;
 	}
-	// Ã¿¶ÎÊı¾İµÄ³¤¶È£¬×îºóÒ»¶Î¿ÉÄÜ»á²»Ò»Ñù
+	// æ¯æ®µæ•°æ®çš„é•¿åº¦ï¼Œæœ€åä¸€æ®µå¯èƒ½ä¼šä¸ä¸€æ ·
 	int offset = n / p;
-	// ÎªÕıÔò²ÉÑù·ÖÅä¿Õ¼ä
-	int *sample = new int[p*p];
+	// ä¸ºæ­£åˆ™é‡‡æ ·åˆ†é…ç©ºé—´
+	int *sample = new int[p * p];
 
 #pragma omp parallel num_threads(p)
 	{
-#pragma region 1. ¾ùÔÈ»®·Ö
+#pragma region 1. å‡åŒ€åˆ’åˆ†
 		int thread_num = omp_get_thread_num();
-		// ¼ÆËã³öÃ¿¸öÏß³ÌĞèÒª´¦ÀíµÄ¶ÎµÄÆğÊ¼ºÍÖÕµãÎ»ÖÃ£¬ÒÔ¼°´¦ÀíµÄ³¤¶È
+		// è®¡ç®—å‡ºæ¯ä¸ªçº¿ç¨‹éœ€è¦å¤„ç†çš„æ®µçš„èµ·å§‹å’Œç»ˆç‚¹ä½ç½®ï¼Œä»¥åŠå¤„ç†çš„é•¿åº¦
 		int start_index = thread_num * offset;
 		int end_index = (thread_num + 1) * offset;
 		end_index = thread_num == p - 1 ? n : end_index;
 		int length = end_index - start_index;
 #pragma endregion
 
-#pragma region 2. ¾Ö²¿ÅÅĞò
+#pragma region 2. å±€éƒ¨æ’åº
 		sort(numbers + start_index, numbers + end_index);
 #pragma endregion
 
-#pragma region 3. ÕıÔò²ÉÑù
-		// ¼ÆËã³öÃ¿¸öÏß³Ì´æ·Å²ÉÑùÊı¾İµÄÆğÊ¼Î»ÖÃºÍ²ÉÑù¼ä¸ô£¬Ã¿¸öÏß³Ì¶¼ÄÜ»ñÈ¡p¸öÊı¾İ
+#pragma region 3. æ­£åˆ™é‡‡æ ·
+		// è®¡ç®—å‡ºæ¯ä¸ªçº¿ç¨‹å­˜æ”¾é‡‡æ ·æ•°æ®çš„èµ·å§‹ä½ç½®å’Œé‡‡æ ·é—´éš”ï¼Œæ¯ä¸ªçº¿ç¨‹éƒ½èƒ½è·å–pä¸ªæ•°æ®
 		int sample_start_index = thread_num * p;
 		int sample_offset = length / p;
 		for (int i = 0; i < p; i++)
 		{
-			*(sample + sample_start_index++) = *(numbers + start_index + i * sample_offset);
+			sample[sample_start_index++] = numbers[start_index + i * sample_offset];
 		}
 #pragma endregion
 	}
 
 #pragma omp barrier 
 
-#pragma region 4. ²ÉÑùÅÅĞò
+#pragma region 4. é‡‡æ ·æ’åº
 	sort(sample, sample + p * p);
 #pragma endregion
 
-#pragma region 5. Ñ¡ÔñÖ÷Ôª
-	// Ñ¡ÔñÖ÷Ôª£¬´æ·ÅÔÚ¸Õ¸Õ´æ·Å²ÉÑùÊı¾İµÄÇ°Ãæ£¬½ÚÊ¡¿Õ¼ä
+#pragma region 5. é€‰æ‹©ä¸»å…ƒ
+	// é€‰æ‹©ä¸»å…ƒï¼Œå­˜æ”¾åœ¨åˆšåˆšå­˜æ”¾é‡‡æ ·æ•°æ®çš„å‰é¢ï¼ŒèŠ‚çœç©ºé—´
 	for (int i = 0; i < p - 1; i++)
 	{
-		*(sample + i) = *(sample + (i + 1) * p);
+		sample[i] = sample[(i + 1) * p];
 	}
 #pragma endregion
 
-	// ÔİÊ±´æ·Å×îÖÕ½á¹ûµÄÊı×é
-	int *result = new int[n];
-	// ´æ·ÅÖ÷Ôª»®·ÖºóµÄ·Ö½ç£¬p×é£¬Ã¿×ép¸ö£¬×îºóÒ»¸öÎª¶Î½áÊøµÄindex
-	int *flag_index = new int[p * p];
-	// ¼ÇÂ¼Ã¿¸ö¶ÎÓĞ¶à³¤£¬ÓÃÓÚ¿½±´Êı¾İ
-	int *segment_length = new int[p - 1]();
+	for (int i = 0; i < p - 1; i++)
+	{
+		printf("%d ", sample[i]);
+	}
+	printf("\n");
 
-#pragma region 6. Ö÷Ôª»®·Ö
+	// æš‚æ—¶å­˜æ”¾æœ€ç»ˆç»“æœçš„æ•°ç»„
+	int *result = new int[n];
+	// å­˜æ”¾ä¸»å…ƒåˆ’åˆ†åçš„åˆ†ç•Œï¼Œpç»„ï¼Œæ¯ç»„pä¸ªï¼Œæœ€åä¸€ä¸ªä¸ºæ®µç»“æŸçš„index
+	int *temp = new int[p * p];
+	// è®°å½•æ¯ä¸ªæ®µæœ‰å¤šé•¿ï¼Œç”¨äºæ‹·è´æ•°æ®
+	int *segment_length = new int[p]();
+
+#pragma region 6. ä¸»å…ƒåˆ’åˆ†
 #pragma omp parallel num_threads(p)
 	{
 		int thread_num = omp_get_thread_num();
@@ -79,63 +85,102 @@ int * PSRS(int *numbers, int n, int p)
 		end_index = thread_num == p - 1 ? n : end_index;
 
 		int sample_index = 0;
-		// Ò»¹²ÓĞp-1¸ö·Ö½çÏß
-		int flag_count = p - 1;
-		int flag_start_index = thread_num * p;
+		const int flag_start_index = thread_num * p;
 
+		// å°†æ¯ä¸€æ®µæ•°æ®æŒ‰ç…§ä¸»å…ƒåˆ’åˆ†æˆå°æ®µï¼Œè®°å½•åˆ†ç•Œindex
 		for (int i = start_index; i < end_index; i++)
 		{
-			// µ±±ÈÖ÷Ôª´óÊ±£¬¼ÇÂ¼µ±Ç°ÏÂ±ê×÷Îª·Ö½çÏß
-			if (*(numbers + i) > *(sample + sample_index))
+			if (numbers[i] > sample[sample_index])
 			{
-				// ¼ÆËãµ±Ç°¶ÎµÄ³¤¶È£¬ÈôÊÇµÚÒ»´Î¼ÆËã£¬ÔòÓÃµ±Ç°index - start_index£¬·ñÔò¼õÈ¥Ç°Ò»´Î¼ÇÂ¼µÄindex
-				int current_segment_length = sample_index == 0 ? i - start_index : i - *(flag_index + flag_start_index + sample_index - 1);
-#pragma omp atomic
-				*(segment_length + sample_index) += current_segment_length;
+				do
+				{
+					temp[flag_start_index + sample_index++] = i;
+				} while (numbers[i] > sample[sample_index] && sample_index < p - 1);
 
-				*(flag_index + flag_start_index + sample_index) = i;
-
-				sample_index++;
-				if (sample_index == flag_count)
+				if (sample_index == p - 1)
 					break;
 			}
 		}
+		while (sample_index < p)
+		{
+			temp[flag_start_index + sample_index++] = end_index;
+		}
 
-		// ¼ÇÂ¼¶Î½áÊøµÄË÷Òı
-		*(flag_index + flag_start_index + sample_index) = end_index;
+#pragma omp barrier 
+#pragma omp master
+		{
+			for (int i = 0; i < p; i++)
+			{
+				for (int j = 0; j < p; j++)
+				{
+					if (i == 0 && j == 0)
+						segment_length[0] += temp[0];
+					else
+					{
+						segment_length[i] += temp[i*p + j] - temp[i*p + j - 1];
+					}
+				}
+			}
+
+			for (int i = 1; i < p; i++)
+			{
+				segment_length[i] += segment_length[i - 1];
+			}
+
+			for (int i = 0; i < p; i++)
+			{
+				printf("%d ", segment_length[i]);
+			}
+			printf("\n");
+		}
+
+		//for (int i = 0; i < n; i++)
+		//{
+		//	printf("%d ", numbers[i]);
+		//}
+		//printf("\n");
+		//for (int i = 0; i < p * p; i++)
+		//{
+		//	printf("%d ", temp[i]);
+		//}
+		//printf("\n");
+		///*for (int i = p * p - 1; i > 0; i--)
+		//{
+		//	temp[i] -= temp[i - 1];
+		//}*/
+
+		
 #pragma endregion
 
-#pragma omp barrier 
-
-#pragma omp master
-		for (int i = 1; i < p - 1; i++)
-		{
-			segment_length[i] += segment_length[i - 1];
-		}
-#pragma omp barrier 
-
-		int result_start_index = thread_num == 0 ? 0 : *(segment_length + thread_num - 1);
+		int result_start_index = thread_num == 0 ? 0 : segment_length[thread_num - 1];
 		int result_start_index_backup = result_start_index;
 
-#pragma region 7. È«¾Ö½»»»
+#pragma region 7. å…¨å±€äº¤æ¢
 		for (int i = 0; i < p; i++)
 		{
-			int copy_start_index = thread_num == 0 && i == 0 ? 0 : *(flag_index + i * p + thread_num - 1);
-			int copy_end_index = *(flag_index + i * p + thread_num);
+			int copy_start_index = thread_num == 0 && i == 0 ? 0 : temp[i * p + thread_num - 1];
+			int copy_end_index = temp[i * p + thread_num];
 			int length = copy_end_index - copy_start_index;
-			memcpy(result + result_start_index, numbers + copy_start_index, length * sizeof(int));
+			if (length != 0)
+				memcpy(result + result_start_index, numbers + copy_start_index, length * sizeof(int));
 			result_start_index += length;
 		}
 #pragma endregion
 
-#pragma region 8. ¹é²¢ÅÅĞò
-		// ´ËÊ±result_start_indexÒÑ¾­±»ÒÆµ½ÁË¸Ã¶ÎµÄÄ©Î²
+#pragma region 8. å½’å¹¶æ’åº
+		// æ­¤æ—¶result_start_indexå·²ç»è¢«ç§»åˆ°äº†è¯¥æ®µçš„æœ«å°¾
 		sort(result + result_start_index_backup, result + result_start_index);
 #pragma endregion
 	}
 
+	for (int i = 0; i < n; i++)
+	{
+		printf("%d ", result[i]);
+	}
+	printf("\n");
+
 	delete[] sample;
-	delete[] flag_index;
+	delete[] temp;
 	delete[] segment_length;
 
 	return result;

@@ -15,21 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="mat_vect_mult.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="trap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PSRS_OpenMP.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Source.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PSRS_MPI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PSRS_OpenMP.h">
+    <ClInclude Include="PSRS_MPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
