@@ -1,6 +1,7 @@
 ﻿#include "PSRS_MPI.h"
 #include <mpi.h>
 #include <algorithm>
+#include <vector>
 using namespace std;
 
 #ifdef _DEBUG
@@ -20,7 +21,7 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 	MPI_File fh;
 	int ierr;
 	ierr = MPI_File_open(MPI_COMM_WORLD, dataFilePath, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
-	
+
 	if (ierr)
 	{
 		printf("Cannot Open file %s\n", dataFilePath);
@@ -89,13 +90,13 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 		MPI_Recv(temp, process_count - 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 
-//#ifdef _DEBUG
-//	for (int i = 0; i < process_count - 1; i++)
-//	{
-//		printf("%d ", temp[i]);
-//	}
-//	printf("\n");
-//#endif // _DEBUG
+	//#ifdef _DEBUG
+	//	for (int i = 0; i < process_count - 1; i++)
+	//	{
+	//		printf("%d ", temp[i]);
+	//	}
+	//	printf("\n");
+	//#endif // _DEBUG
 #pragma endregion
 
 #pragma region 6. 主元划分
@@ -108,7 +109,7 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 			do
 			{
 				temp[flag_index++] = i;
-			} while (numbers_in_curr_process[i] > temp[flag_index]);
+			} while (numbers_in_curr_process[i] > temp[flag_index] && flag_index < process_count - 1);
 
 			if (flag_index == process_count - 1)
 				break;
@@ -119,7 +120,7 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 	{
 		temp[flag_index++] = number_length_in_curr_process;
 	}
-	
+
 	// 现在temp记录每段的长度，长度process_count
 	for (int i = process_count - 1; i > 0; i--)
 	{
@@ -144,13 +145,13 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 			MPI_Recv(receive_data_length + i, 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 	}
-//#ifdef _DEBUG
-//	for (int i = 0; i < process_count; i++)
-//	{
-//		printf("%d ", temp[i]);
-//	}
-//	printf("\n");
-//#endif // _DEBUG
+	//#ifdef _DEBUG
+	//	for (int i = 0; i < process_count; i++)
+	//	{
+	//		printf("%d ", temp[i]);
+	//	}
+	//	printf("\n");
+	//#endif // _DEBUG
 #pragma endregion
 
 #pragma region 7. 全局交换
@@ -171,7 +172,8 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 		result_length += receive_data_length[i];
 	}
 
-	int *result_in_curr_process = new int[result_length];
+	int *result_temp = new int[result_length];
+	vector<int> segment_start_indices;
 	start_index = 0;
 	for (int i = 0; i < process_count; i++)
 	{
@@ -180,32 +182,73 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 
 		if (i != process_num)
 		{
-			MPI_Recv(result_in_curr_process + start_index, receive_data_length[i], MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(result_temp + start_index, receive_data_length[i], MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 		else
 		{
-			memcpy(result_in_curr_process + start_index, numbers_in_curr_process, receive_data_length[i] * sizeof(int));
+			memcpy(result_temp + start_index, numbers_in_curr_process, receive_data_length[i] * sizeof(int));
 		}
+		segment_start_indices.push_back(start_index);
 		start_index += receive_data_length[i];
 	}
+	delete[] numbers_in_curr_process;
+	segment_start_indices.push_back(start_index);
+	//for (auto i : segment_start_indices)
+	//{
+	//	printf("%d ", i);
+	//}
+	//printf("\n");
 #pragma endregion
 
 #pragma region 8. 归并排序
-	sort(result_in_curr_process, result_in_curr_process + result_length);
+	//sort(result_temp, result_temp + result_length);
+	vector<int> points(segment_start_indices);
+	int min = INT_MAX;
+	int *min_index = nullptr;
+	int count = 0;
+	numbers_in_curr_process = new int[result_length];
+
+	while (count < result_length)
+	{
+		for (int i = 0; i < points.size() - 1; i++)
+		{
+			if (points[i] < segment_start_indices[i + 1] && result_temp[points[i]] < min)
+			{
+				min = result_temp[points[i]];
+				min_index = &points[i];
+			}
+		}
+
+		numbers_in_curr_process[count++] = min;
+		(*min_index)++;
+		min = INT_MAX;
+	}
 #pragma endregion
 
 #ifdef _DEBUG
 	for (int i = 0; i < result_length; i++)
 	{
-		printf("%d ", result_in_curr_process[i]);
+		printf("%d ", numbers_in_curr_process[i]);
 	}
+	printf("\n");
+
+	for (int i = 0; i < result_length - 1; i++)
+	{
+		if (numbers_in_curr_process[i] > numbers_in_curr_process[i + 1])
+		{
+			printf("sort error");
+			goto end;
+		}
+	}
+	printf("sort success");
 	printf("\n");
 	printf("\n");
 #endif // _DEBUG
 
+end:
 	delete[] sample;
 	delete[] temp;
 	delete[] receive_data_length;
-	delete[] result_in_curr_process;
+	delete[] result_temp;
 	return numbers_in_curr_process;
 }

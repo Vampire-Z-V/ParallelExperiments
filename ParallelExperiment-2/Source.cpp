@@ -6,7 +6,7 @@
 
 #include "PSRS_MPI.h"
 
-#define BLOCK 1024 * 1024
+#define BLOCK 1
 
 int main(int argc, char *argv[])
 {
