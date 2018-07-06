@@ -1,4 +1,6 @@
 ﻿#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <omp.h>
 #include <algorithm>
 #include "PSRS_OpenMP.h"
@@ -14,33 +16,38 @@ using namespace std;
 
 int main()
 {
-	/*int test[] = {
-		33,78,92,1,39,19,71,39,90,3,21,4,82,87,89,76,31,10,24,53,50,76,33,78,56,13,15,68,94,93,8,36,63,82,40,56,81,25,29,77,65,54,27,82,24,99,41,5,92,43
-	};*/
+	//srand(time(0));
+
 	int *test = new int[BLOCK]();
+	test[0] = BLOCK;
 	for (int i = 1; i < BLOCK; i++)
 	{
-		test[i] = test[i - 1] - 1;
+		test[i] = rand() % BLOCK;
+		//test[i] = test[i - 1] - 1;
 	}
-	/*for (int i = 0; i < BLOCK; i++)
-	{
-		printf("%d ", test[i]);
-	}
-	printf("\n");
-	printf("\n");*/
 
-	TIME_START_RECORD
-	int * result = PSRS(test, BLOCK, 10);
-	TIME_STOP_RECORD
+	TIME_START_RECORD;
+	PSRS(test, BLOCK, 10);
+	TIME_STOP_RECORD;
 
-//#ifdef _DEBUG
-	/*for (int i = 0; i < BLOCK; i++)
+	for (int i = 1; i < BLOCK; i++)
 	{
-		printf("%d ", test[i]);
+		if (test[i] < test[i - 1])
+		{
+			printf("sort fail\n");
+			goto end;
+		}
 	}
-	printf("\n");*/
+	printf("sort success\n");
+	//#ifdef _DEBUG
+		/*for (int i = 0; i < BLOCK; i++)
+		{
+			printf("%d ", test[i]);
+		}
+		printf("\n");*/
+end:
 	system("pause");
-//#endif 
+	//#endif 
 
 	delete[] test;
 	test = nullptr;

@@ -1,22 +1,23 @@
 ﻿#include "PSRS_OpenMP.h"
 #include <omp.h>
 #include <algorithm>
+#include <vector>
 using namespace std;
 
 #ifdef _DEBUG
 #include <iostream>
 #endif
 
-int * PSRS(int *numbers, int n, int p)
+void PSRS(int *numbers, int n, int p)
 {
 	if (p <= 0)
 	{
-		return nullptr;
+		return;
 	}
 	else if (p == 1)
 	{
 		sort(numbers, numbers + n);
-		return numbers;
+		return;
 	}
 	// 每段数据的长度，最后一段可能会不一样
 	int offset = n / p;
@@ -49,6 +50,12 @@ int * PSRS(int *numbers, int n, int p)
 #pragma endregion
 	}
 
+	for (int i = 0; i < n; i++)
+	{
+		printf("%d ", numbers[i]);
+	}
+	printf("\n");
+	printf("\n");
 #pragma omp barrier 
 
 #pragma region 4. 采样排序
@@ -70,22 +77,22 @@ int * PSRS(int *numbers, int n, int p)
 	printf("\n");
 
 	// 暂时存放最终结果的数组
-	int *result = new int[n];
+	int *result_temp = new int[n];
 	// 存放主元划分后的分界，p组，每组p个，最后一个为段结束的index
-	int *temp = new int[p * p];
+	int *slice_indices = new int[p * p];
 	// 记录每个段有多长，用于拷贝数据
 	int *segment_length = new int[p]();
 
-#pragma region 6. 主元划分
 #pragma omp parallel num_threads(p)
 	{
+#pragma region 6. 主元划分
 		int thread_num = omp_get_thread_num();
 		int start_index = thread_num * offset;
 		int end_index = (thread_num + 1) * offset;
 		end_index = thread_num == p - 1 ? n : end_index;
 
 		int sample_index = 0;
-		const int flag_start_index = thread_num * p;
+		const int slice_start_index = thread_num * p;
 
 		// 将每一段数据按照主元划分成小段，记录分界index
 		for (int i = start_index; i < end_index; i++)
@@ -94,7 +101,7 @@ int * PSRS(int *numbers, int n, int p)
 			{
 				do
 				{
-					temp[flag_start_index + sample_index++] = i;
+					slice_indices[slice_start_index + sample_index++] = i;
 				} while (numbers[i] > sample[sample_index] && sample_index < p - 1);
 
 				if (sample_index == p - 1)
@@ -103,7 +110,7 @@ int * PSRS(int *numbers, int n, int p)
 		}
 		while (sample_index < p)
 		{
-			temp[flag_start_index + sample_index++] = end_index;
+			slice_indices[slice_start_index + sample_index++] = end_index;
 		}
 
 #pragma omp barrier 
@@ -114,10 +121,10 @@ int * PSRS(int *numbers, int n, int p)
 				for (int j = 0; j < p; j++)
 				{
 					if (i == 0 && j == 0)
-						segment_length[0] += temp[0];
+						segment_length[0] += slice_indices[0];
 					else
 					{
-						segment_length[i] += temp[i*p + j] - temp[i*p + j - 1];
+						segment_length[i] += slice_indices[j*p + i] - slice_indices[j*p + i - 1];
 					}
 				}
 			}
@@ -132,56 +139,84 @@ int * PSRS(int *numbers, int n, int p)
 				printf("%d ", segment_length[i]);
 			}
 			printf("\n");
+			printf("\n");
 		}
 
-		//for (int i = 0; i < n; i++)
-		//{
-		//	printf("%d ", numbers[i]);
-		//}
-		//printf("\n");
-		//for (int i = 0; i < p * p; i++)
-		//{
-		//	printf("%d ", temp[i]);
-		//}
-		//printf("\n");
-		///*for (int i = p * p - 1; i > 0; i--)
-		//{
-		//	temp[i] -= temp[i - 1];
-		//}*/
-
-		
+#pragma omp barrier 
 #pragma endregion
 
+#pragma region 7. 全局交换
 		int result_start_index = thread_num == 0 ? 0 : segment_length[thread_num - 1];
 		int result_start_index_backup = result_start_index;
+		vector<int> segment_start_indices;
 
-#pragma region 7. 全局交换
 		for (int i = 0; i < p; i++)
 		{
-			int copy_start_index = thread_num == 0 && i == 0 ? 0 : temp[i * p + thread_num - 1];
-			int copy_end_index = temp[i * p + thread_num];
+			int copy_start_index = thread_num == 0 && i == 0 ? 0 : slice_indices[i * p + thread_num - 1];
+			int copy_end_index = slice_indices[i * p + thread_num];
 			int length = copy_end_index - copy_start_index;
 			if (length != 0)
-				memcpy(result + result_start_index, numbers + copy_start_index, length * sizeof(int));
-			result_start_index += length;
+			{
+				segment_start_indices.push_back(result_start_index);
+				memcpy(result_temp + result_start_index, numbers + copy_start_index, length * sizeof(int));
+				result_start_index += length;
+			}
 		}
+		int result_end_index = result_start_index;
+		result_start_index = result_start_index_backup;
+#pragma omp barrier 
 #pragma endregion
 
 #pragma region 8. 归并排序
-		// 此时result_start_index已经被移到了该段的末尾
-		sort(result + result_start_index_backup, result + result_start_index);
+		vector<int> points(segment_start_indices);
+		int min = INT_MAX;
+		int *min_index = nullptr;
+		int count = 0;
+		int length = result_end_index - result_start_index;
+
+		while (count < length)
+		{
+			int i = 0;
+			for (; i < points.size() - 1; i++)
+			{
+				if (points[i] < segment_start_indices[i + 1] && result_temp[points[i]] < min)
+				{
+					min = result_temp[points[i]];
+					min_index = &points[i];
+				}
+			}
+			if (points[i] < result_end_index && result_temp[points[i]] < min)
+			{
+				min = result_temp[points[i]];
+				min_index = &points[i];
+			}
+
+			count++;
+			numbers[result_start_index++] = min;
+			(*min_index)++;
+			min = INT_MAX;
+		}
 #pragma endregion
 	}
 
+	printf("\n");
+
 	for (int i = 0; i < n; i++)
 	{
-		printf("%d ", result[i]);
+		printf("%d ", result_temp[i]);
 	}
+	printf("\n");
+	printf("\n");
+
+	for (int i = 0; i < n; i++)
+	{
+		printf("%d ", numbers[i]);
+	}
+	printf("\n");
 	printf("\n");
 
 	delete[] sample;
-	delete[] temp;
+	delete[] slice_indices;
 	delete[] segment_length;
-
-	return result;
+	delete[] result_temp;
 }

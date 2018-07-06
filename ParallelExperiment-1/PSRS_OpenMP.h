@@ -1,3 +1,3 @@
 #pragma once
 
-int * PSRS(int *numbers, int n, int p);
+void PSRS(int *numbers, int n, int p);
