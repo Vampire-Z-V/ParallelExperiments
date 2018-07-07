@@ -38,6 +38,31 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 
 #pragma region 2. 局部排序
 	sort(numbers_in_curr_process, numbers_in_curr_process + number_length_in_curr_process);
+	if (process_count == 1)
+	{
+#ifdef _DEBUG
+		for (int i = 0; i < number_length_in_curr_process; i++)
+		{
+			printf("%d ", numbers_in_curr_process[i]);
+		}
+		printf("\n");
+
+		for (int i = 0; i < number_length_in_curr_process - 1; i++)
+		{
+			if (numbers_in_curr_process[i] > numbers_in_curr_process[i + 1])
+			{
+				printf("sort error");
+				goto end_first;
+			}
+		}
+		printf("sort success");
+		printf("\n");
+		printf("\n");
+#endif // _DEBUG
+
+	end_first:
+		return numbers_in_curr_process;
+	}
 #pragma endregion
 
 #pragma region 3. 正则采样
@@ -244,6 +269,17 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 	printf("\n");
 	printf("\n");
 #endif // _DEBUG
+	for (int i = 0; i < result_length - 1; i++)
+	{
+		if (numbers_in_curr_process[i] > numbers_in_curr_process[i + 1])
+		{
+			printf("sort error");
+			goto end;
+		}
+	}
+	printf("sort success");
+	printf("\n");
+	printf("\n");
 
 end:
 	delete[] sample;

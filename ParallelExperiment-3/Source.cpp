@@ -8,7 +8,7 @@
 #include <algorithm>
 using namespace std;
 
-#define BLOCK 1
+#define BLOCK 1024*1024
 
 void PSRS(int *numbers, int n, int p)
 {
@@ -64,6 +64,12 @@ void PSRS(int *numbers, int n, int p)
 		sample[i] = sample[(i + 1) * p];
 	}
 #pragma endregion
+
+	for (int i = 0; i < p - 1; i++)
+	{
+		printf("%d ", sample[i]);
+	}
+	printf("\n");
 
 	// 暂时存放最终结果的数组
 	int *result_temp = new int[n];
@@ -122,6 +128,12 @@ void PSRS(int *numbers, int n, int p)
 			{
 				segment_length[i] += segment_length[i - 1];
 			}
+
+			for (int i = 0; i < p; i++)
+			{
+				printf("%d ", segment_length[i]);
+			}
+			printf("\n");
 		}
 
 #pragma omp barrier 
@@ -181,6 +193,20 @@ void PSRS(int *numbers, int n, int p)
 #pragma endregion
 	}
 
+	//for (int i = 0; i < n; i++)
+	//{
+	//	printf("%d ", result_temp[i]);
+	//}
+	//printf("\n");
+	//printf("\n");
+
+	//for (int i = 0; i < n; i++)
+	//{
+	//	printf("%d ", numbers[i]);
+	//}
+	//printf("\n");
+	//printf("\n");
+
 	delete[] sample;
 	delete[] slice_indices;
 	delete[] segment_length;
@@ -217,6 +243,31 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 #pragma region 2. 局部排序
 	//sort(numbers_in_curr_process, numbers_in_curr_process + number_length_in_curr_process);
 	PSRS(numbers_in_curr_process, number_length_in_curr_process, 8);
+	if (process_count == 1)
+	{
+#ifdef _DEBUG
+		for (int i = 0; i < number_length_in_curr_process; i++)
+		{
+			printf("%d ", numbers_in_curr_process[i]);
+		}
+		printf("\n");
+
+		for (int i = 0; i < number_length_in_curr_process - 1; i++)
+		{
+			if (numbers_in_curr_process[i] > numbers_in_curr_process[i + 1])
+			{
+				printf("sort error");
+				goto end_only_one_process;
+			}
+		}
+		printf("sort success");
+		printf("\n");
+		printf("\n");
+#endif // _DEBUG
+
+	end_only_one_process:
+		return numbers_in_curr_process;
+}
 #pragma endregion
 
 #pragma region 3. 正则采样
@@ -409,6 +460,7 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 		printf("%d ", numbers_in_curr_process[i]);
 	}
 	printf("\n");
+#endif // _DEBUG
 
 	for (int i = 0; i < result_length - 1; i++)
 	{
@@ -421,7 +473,6 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 	printf("sort success");
 	printf("\n");
 	printf("\n");
-#endif // _DEBUG
 
 end:
 	delete[] sample;

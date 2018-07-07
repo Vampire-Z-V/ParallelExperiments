@@ -49,13 +49,6 @@ void PSRS(int *numbers, int n, int p)
 		}
 #pragma endregion
 	}
-
-	for (int i = 0; i < n; i++)
-	{
-		printf("%d ", numbers[i]);
-	}
-	printf("\n");
-	printf("\n");
 #pragma omp barrier 
 
 #pragma region 4. 采样排序
@@ -201,19 +194,19 @@ void PSRS(int *numbers, int n, int p)
 
 	printf("\n");
 
-	for (int i = 0; i < n; i++)
-	{
-		printf("%d ", result_temp[i]);
-	}
-	printf("\n");
-	printf("\n");
+	//for (int i = 0; i < n; i++)
+	//{
+	//	printf("%d ", result_temp[i]);
+	//}
+	//printf("\n");
+	//printf("\n");
 
-	for (int i = 0; i < n; i++)
-	{
-		printf("%d ", numbers[i]);
-	}
-	printf("\n");
-	printf("\n");
+	//for (int i = 0; i < n; i++)
+	//{
+	//	printf("%d ", numbers[i]);
+	//}
+	//printf("\n");
+	//printf("\n");
 
 	delete[] sample;
 	delete[] slice_indices;

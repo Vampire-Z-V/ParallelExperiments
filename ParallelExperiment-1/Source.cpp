@@ -12,27 +12,49 @@ using namespace std;
 #define TIME_STOP_RECORD \
 	double EndTime = omp_get_wtime(); \
 	printf("RunTime: %.10fs\n", EndTime - StartTime);
-#define BLOCK 200
+#define BLOCK 1024*1024
 
-int main()
+int main(int argc, char *argv[])
 {
+
+	if (argc != 4)
+	{
+		printf("Usage:%s loop_times data_file thread_num\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
 	//srand(time(0));
 
-	int *test = new int[BLOCK]();
-	test[0] = BLOCK;
-	for (int i = 1; i < BLOCK; i++)
+	//int *test = new int[BLOCK]();
+	//test[0] = BLOCK;
+	//for (int i = 1; i < BLOCK; i++)
+	//{
+	//	test[i] = rand() % BLOCK;
+	//	//test[i] = test[i - 1] - 1;
+	//}
+
+	int loop = atoi(argv[1]);
+	int number_total_length = BLOCK * loop;
+
+	FILE *fp = NULL;
+	fp = fopen(argv[2], "rb");
+
+	if (fp == NULL)
 	{
-		test[i] = rand() % BLOCK;
-		//test[i] = test[i - 1] - 1;
+		printf("Cannot Open file %s\n", argv[2]);
+		exit(-1);
 	}
 
+	int *numbers = new int[number_total_length];
+	fread(numbers, sizeof(int), number_total_length, fp);
+	fclose(fp);
+
 	TIME_START_RECORD;
-	PSRS(test, BLOCK, 10);
+	PSRS(numbers, number_total_length, atoi(argv[3]));
 	TIME_STOP_RECORD;
 
-	for (int i = 1; i < BLOCK; i++)
+	for (int i = 1; i < number_total_length; i++)
 	{
-		if (test[i] < test[i - 1])
+		if (numbers[i] < numbers[i - 1])
 		{
 			printf("sort fail\n");
 			goto end;
@@ -46,12 +68,9 @@ int main()
 		}
 		printf("\n");*/
 end:
-	system("pause");
 	//#endif 
 
-	delete[] test;
-	test = nullptr;
-	//delete[] result;
+	delete[] numbers;
 
 	return 0;
 }

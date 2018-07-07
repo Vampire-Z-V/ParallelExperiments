@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define BLOCK 1
+#define BLOCK 1024*1024
 int data[BLOCK];
 
 int main(int argc, char* argv[])
@@ -40,7 +40,6 @@ int main(int argc, char* argv[])
 			{
 				d = rand() % (loop * BLOCK);
 			}
-			printf("%d ", d);
 		}
 
 		fwrite(data, sizeof(int)*BLOCK, 1, fp);
