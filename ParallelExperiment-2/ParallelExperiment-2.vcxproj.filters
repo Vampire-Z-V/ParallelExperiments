@@ -24,6 +24,9 @@
     <ClCompile Include="mat_vect_mult.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="trap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PSRS_MPI.h">

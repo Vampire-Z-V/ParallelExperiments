@@ -120,6 +120,7 @@
     <ClCompile Include="mat_vect_mult.cpp" />
     <ClCompile Include="PSRS_MPI.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="trap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PSRS_MPI.h" />
