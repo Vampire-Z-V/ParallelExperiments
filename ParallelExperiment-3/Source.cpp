@@ -65,12 +65,6 @@ void PSRS(int *numbers, int n, int p)
 	}
 #pragma endregion
 
-	for (int i = 0; i < p - 1; i++)
-	{
-		printf("%d ", sample[i]);
-	}
-	printf("\n");
-
 	// 暂时存放最终结果的数组
 	int *result_temp = new int[n];
 	// 存放主元划分后的分界，p组，每组p个，最后一个为段结束的index
@@ -128,12 +122,6 @@ void PSRS(int *numbers, int n, int p)
 			{
 				segment_length[i] += segment_length[i - 1];
 			}
-
-			for (int i = 0; i < p; i++)
-			{
-				printf("%d ", segment_length[i]);
-			}
-			printf("\n");
 		}
 
 #pragma omp barrier 
@@ -193,27 +181,13 @@ void PSRS(int *numbers, int n, int p)
 #pragma endregion
 	}
 
-	//for (int i = 0; i < n; i++)
-	//{
-	//	printf("%d ", result_temp[i]);
-	//}
-	//printf("\n");
-	//printf("\n");
-
-	//for (int i = 0; i < n; i++)
-	//{
-	//	printf("%d ", numbers[i]);
-	//}
-	//printf("\n");
-	//printf("\n");
-
 	delete[] sample;
 	delete[] slice_indices;
 	delete[] segment_length;
 	delete[] result_temp;
 }
 
-int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
+int* PSRS(const char* dataFilePath, int n, int process_num, int process_count, int thread_num)
 {
 	MPI_Request request;
 
@@ -240,9 +214,11 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 	MPI_File_close(&fh);
 #pragma endregion
 
+	double start_time = MPI_Wtime();
+
 #pragma region 2. 局部排序
 	//sort(numbers_in_curr_process, numbers_in_curr_process + number_length_in_curr_process);
-	PSRS(numbers_in_curr_process, number_length_in_curr_process, 8);
+	PSRS(numbers_in_curr_process, number_length_in_curr_process, thread_num);
 	if (process_count == 1)
 	{
 #ifdef _DEBUG
@@ -319,14 +295,6 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 		// 现在temp存放主进程发送的主元，长度process_count - 1
 		MPI_Recv(temp, process_count - 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
-
-	//#ifdef _DEBUG
-	//	for (int i = 0; i < process_count - 1; i++)
-	//	{
-	//		printf("%d ", temp[i]);
-	//	}
-	//	printf("\n");
-	//#endif // _DEBUG
 #pragma endregion
 
 #pragma region 6. 主元划分
@@ -375,13 +343,6 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 			MPI_Recv(receive_data_length + i, 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
 	}
-	//#ifdef _DEBUG
-	//	for (int i = 0; i < process_count; i++)
-	//	{
-	//		printf("%d ", temp[i]);
-	//	}
-	//	printf("\n");
-	//#endif // _DEBUG
 #pragma endregion
 
 #pragma region 7. 全局交换
@@ -423,11 +384,6 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 	}
 	delete[] numbers_in_curr_process;
 	segment_start_indices.push_back(start_index);
-	//for (auto i : segment_start_indices)
-	//{
-	//	printf("%d ", i);
-	//}
-	//printf("\n");
 #pragma endregion
 
 #pragma region 8. 归并排序
@@ -461,6 +417,8 @@ int* PSRS(const char* dataFilePath, int n, int process_num, int process_count)
 	}
 	printf("\n");
 #endif // _DEBUG
+	printf("%.10lfs", MPI_Wtime() - start_time);
+	printf("\n");
 
 	for (int i = 0; i < result_length - 1; i++)
 	{
@@ -484,9 +442,9 @@ end:
 
 int main(int argc, char *argv[])
 {
-	if (argc != 3)
+	if (argc != 4)
 	{
-		printf("Usage:%s loop_times data_file\n", argv[0]);
+		printf("Usage:%s loop_times data_file thread_num\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -501,7 +459,7 @@ int main(int argc, char *argv[])
 	int loop = atoi(argv[1]);
 	int number_total_length = BLOCK * loop;
 
-	int *numbers = PSRS(argv[2], number_total_length, rank, size);
+	int *numbers = PSRS(argv[2], number_total_length, rank, size, atoi(argv[3]));
 
 	MPI_Finalize();
 
