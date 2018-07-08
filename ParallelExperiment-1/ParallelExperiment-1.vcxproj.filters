@@ -24,7 +24,7 @@
     <ClCompile Include="PSRS_OpenMP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source.cpp">
+    <ClCompile Include="PSRS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
