@@ -202,7 +202,7 @@ void PSRS(double *numbers, size_t n, size_t p)
 	delete[] result_temp;
 }
 
-double* PSRS(const char* dataFilePath, const size_t n, const size_t data_start_offset, const size_t process_num, const size_t process_count, const size_t thread_num, const size_t curr_round, const size_t total_round)
+void PSRS(const char* dataFilePath, const size_t n, const size_t data_start_offset, const size_t process_num, const size_t process_count, const size_t thread_num, const size_t curr_round, const size_t total_round)
 {
 	MPI_Request request;
 
@@ -286,7 +286,8 @@ double* PSRS(const char* dataFilePath, const size_t n, const size_t data_start_o
 		MPI_Recv(temp, process_count - 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	}
 
-	DisplayArray(temp, process_count - 1);
+	if(process_num == 0)
+		DisplayArray(temp, process_count - 1);
 
 	/// 6. 主元划分
 	size_t flag_index = 0;
@@ -437,7 +438,6 @@ double* PSRS(const char* dataFilePath, const size_t n, const size_t data_start_o
 	delete[] result_temp;
 	delete[] displs;
 	delete[] numbers_in_curr_process;
-	return NULL;
 }
 
 void PSRS(const char* file_1, const char* file_2, const size_t file_size, const size_t load_data_count_per_round, const size_t round, const size_t process_num, const size_t process_count, const size_t thread_num, const int run_count)
@@ -447,7 +447,7 @@ void PSRS(const char* file_1, const char* file_2, const size_t file_size, const 
 
 	size_t offset = (run_count - 1) % (round / 2);
 	//printf("%d: ", i);
-	double *temp_sample = PSRS(file, load_data_count_per_round, load_data_count_per_round * sizeof(double) * offset, process_num, process_count, thread_num, run_count, round);
+	PSRS(file, load_data_count_per_round, load_data_count_per_round * sizeof(double) * offset, process_num, process_count, thread_num, run_count, round);
 }
 
 void ReadTempFile(const char* file_name)
@@ -479,7 +479,7 @@ int main(int argc, char *argv[])
 {
 	if (argc != 7)
 	{
-		printf("Usage:%s data_file_1 data_file_2 each_file_size(M) rounds thread_num run_count\n", argv[0]);
+		printf("Usage:%s data_file_1 data_file_2 each_file_size(G) rounds thread_num run_count\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -496,7 +496,12 @@ int main(int argc, char *argv[])
 	printf("process: %d of %d\n", rank, size);
 	double start_time = MPI_Wtime();
 	PSRS(argv[1], argv[2], data_file_size, load_data_count_per_round, round, rank, size, atoi(argv[5]), atoi(argv[6]));
-	printf("%.15lfs\n\n", MPI_Wtime() - start_time);
+	start_time = MPI_Wtime() - start_time;
+	double delta_time;
+	MPI_Reduce(&start_time, &delta_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+	if(rank == 0)
+		printf("%.15lfs\n\n", delta_time);
+
 	MPI_Finalize();
 	return 0;
 }
